@@ -1,7 +1,8 @@
 import { InputType, Field, ObjectType } from '@nestjs/graphql';
 import { IsNumber, IsString } from 'class-validator';
 
-@ObjectType('EpisodeType')
+@InputType('episodeInput', { isAbstract: true })
+@ObjectType()
 export class Episode {
   @Field((type) => Number)
   @IsNumber()
