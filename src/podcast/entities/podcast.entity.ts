@@ -1,25 +1,37 @@
-import { Field, ObjectType } from '@nestjs/graphql';
-import { IsNumber, IsString } from 'class-validator';
+import { PrimaryGeneratedColumn, Entity, Column, OneToMany } from 'typeorm';
 import { Episode } from './episode.entity';
+import { ObjectType, Field } from '@nestjs/graphql';
+import { IsString, IsNumber, IsOptional } from 'class-validator';
 
 @ObjectType()
+@Entity()
 export class Podcast {
-  @Field((type) => Number)
+  @PrimaryGeneratedColumn()
+  @Field((_) => Number)
   @IsNumber()
   id: number;
 
-  @Field((type) => String)
+  @Column()
+  @Field((_) => String)
   @IsString()
   title: string;
 
-  @Field((type) => String)
+  @Column()
+  @Field((_) => String)
   @IsString()
-  category: string;
+  category?: string;
 
-  @Field((type) => Number)
+  @Column()
+  @Field((_) => Number, { nullable: true, defaultValue: 0 })
   @IsNumber()
-  rating: number;
+  @IsOptional()
+  rating?: number;
 
-  @Field((type) => [Episode])
+  @OneToMany((type) => Episode, (episode) => episode.podcast, {
+    cascade: true,
+    lazy: true,
+    onDelete: 'CASCADE',
+  })
+  @Field((_) => [Episode])
   episodes: Episode[];
 }

@@ -1,25 +1,26 @@
+import { PodcastSearchInput } from './podcast.dto';
+import { Field, InputType, ObjectType } from '@nestjs/graphql';
+import { IsString, IsNumber, IsOptional } from 'class-validator';
 import { Episode } from '../entities/episode.entity';
-import { Field, InputType } from '@nestjs/graphql';
-import { IsNumber, IsOptional, IsString } from 'class-validator';
 
-@InputType('updatePodcastInput', { isAbstract: true })
-export class UpdatePodcastDto {
-  @Field((type) => String, { nullable: true })
+@InputType({ isAbstract: true })
+@ObjectType()
+export class UpdatePodcastDto extends PodcastSearchInput {
+  @Field((_) => String, { nullable: true })
   @IsString()
   @IsOptional()
   readonly title?: string;
 
-  @Field((type) => String, { nullable: true })
+  @Field((_) => String, { nullable: true })
   @IsString()
   @IsOptional()
-  readonly category?: string;
+  category?: string;
 
-  @Field((type) => Number, { nullable: true })
+  @Field((_) => Number, { nullable: true })
+  @IsOptional()
   @IsNumber()
-  @IsOptional()
-  readonly rating?: number;
+  rating?: number;
 
-  @Field((type) => [Episode], { nullable: true })
-  @IsOptional()
-  readonly episodes?: Episode[];
+  @Field((_) => [Episode], { nullable: true })
+  episodes?: Episode[];
 }

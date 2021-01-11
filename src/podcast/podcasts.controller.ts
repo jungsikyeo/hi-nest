@@ -27,7 +27,7 @@ export class PodcastsController {
     return this.podcastsService.createPodcast(createPodcastDto);
   }
 
-  @Get('/:id')
+  /*@Get('/:id')
   getPodcast(@Param('id') id: string) {
     return this.podcastsService.getPodcast(id);
   }
@@ -81,5 +81,5 @@ export class EpisodeController {
     @Param('episodeId') episodeId: string,
   ) {
     return this.podcastService.deleteEpisode(podcastId, episodeId);
-  }
+  }*/
 }
