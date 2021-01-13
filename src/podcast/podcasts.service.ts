@@ -1,110 +1,237 @@
 import { Injectable } from '@nestjs/common';
-import { CreateEpisodeDto } from './dtos/create-episode.dto';
-import { CreatePodcastDto } from './dtos/create-podcast.dto';
-import { UpdateEpisodeDto } from './dtos/update-episode.dto';
-import { UpdatePodcastDto } from './dtos/update-podcast.dto';
+import {
+  CreateEpisodeInput,
+  CreateEpisodeOutput,
+} from './dtos/create-episode.dto';
+import {
+  CreatePodcastInput,
+  CreatePodcastOutput,
+} from './dtos/create-podcast.dto';
+import { UpdateEpisodeInput } from './dtos/update-episode.dto';
+import { UpdatePodcastInput } from './dtos/update-podcast.dto';
 import { Episode } from './entities/episode.entity';
 import { Podcast } from './entities/podcast.entity';
-import { CoreOutput, PodcastOutput, EpisodesOutput } from './dtos/output.dto';
-import { EpisodesSearchInput } from './dtos/podcast.dto';
+import { CoreOutput } from '../common/dtos/output.dto';
+import {
+  PodcastOutput,
+  EpisodesOutput,
+  EpisodesSearchInput,
+  GetAllPodcastsOutput,
+  GetEpisodeOutput,
+} from './dtos/podcast.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { getConnection } from 'typeorm/index';
 
 @Injectable()
 export class PodcastsService {
   constructor(
-    @InjectRepository(Podcast) private readonly podcasts: Repository<Podcast>,
-    @InjectRepository(Episode) private readonly episodes: Repository<Episode>,
+    @InjectRepository(Podcast)
+    private readonly podcastRepository: Repository<Podcast>,
+    @InjectRepository(Episode)
+    private readonly episodeRepository: Repository<Episode>,
   ) {}
 
-  async getAllPodcasts(): Promise<Podcast[]> {
-    return await this.podcasts.find();
+  private readonly InternalServerErrorOutput = {
+    ok: false,
+    error: 'Internal server error occurred.',
+  };
+
+  async getAllPodcasts(): Promise<GetAllPodcastsOutput> {
+    try {
+      const podcasts = await this.podcastRepository.find();
+      return {
+        ok: true,
+        podcasts,
+      };
+    } catch (e) {
+      console.log(e);
+      return this.InternalServerErrorOutput;
+    }
   }
 
   async createPodcast({
     title,
     category,
-    rating,
-  }: CreatePodcastDto): Promise<CoreOutput> {
+  }: CreatePodcastInput): Promise<CreatePodcastOutput> {
     try {
-      await this.podcasts.save(
-        this.podcasts.create({ title, category, rating }),
-      );
-      return { ok: true };
+      const newPodcast = this.podcastRepository.create({ title, category });
+      const { id } = await this.podcastRepository.save(newPodcast);
+      return {
+        ok: true,
+        id,
+      };
     } catch (e) {
-      return { ok: false, error: 'Couldn`t create podcast' };
+      console.log(e);
+      return this.InternalServerErrorOutput;
     }
   }
 
   async getPodcast(id: number): Promise<PodcastOutput> {
-    const podcast = await this.podcasts.findOne(id);
-    if (!podcast) {
+    try {
+      const podcast = await this.podcastRepository.findOne(
+        { id },
+        { relations: ['episodes'] },
+      );
+      if (!podcast) {
+        return {
+          ok: false,
+          error: `Podcast with id ${id} not found`,
+        };
+      }
       return {
-        ok: false,
-        error: `${id} id podcast doesn't exist!`,
+        ok: true,
+        podcast,
       };
+    } catch (e) {
+      console.log(e);
+      return this.InternalServerErrorOutput;
     }
-    return {
-      ok: true,
-      error: null,
-      podcast,
-    };
   }
 
   async deletePodcast(id: number): Promise<CoreOutput> {
-    await getConnection()
-      .createQueryBuilder()
-      .delete()
-      .from(Episode)
-      .where('podcastId = :id', { id })
-      .execute();
-    await this.podcasts.delete(id);
-    return { ok: true };
+    try {
+      const { ok, error } = await this.getPodcast(id);
+      if (!ok) {
+        return { ok, error };
+      }
+      await this.podcastRepository.delete({ id });
+      return { ok };
+    } catch (e) {
+      console.log(e);
+      return this.InternalServerErrorOutput;
+    }
   }
 
-  async updatePodcast({ id, ...rest }: UpdatePodcastDto): Promise<CoreOutput> {
+  async updatePodcast({
+    id,
+    payload,
+  }: UpdatePodcastInput): Promise<CoreOutput> {
     try {
-      await this.podcasts.update(id, { ...rest });
-      return { ok: true };
+      const { ok, error, podcast } = await this.getPodcast(id);
+      if (!ok) {
+        return { ok, error };
+      }
+      if (payload.rating !== null) {
+        if (payload.rating < 1 || payload.rating > 5) {
+          return {
+            ok: false,
+            error: 'Rating must be between 1 and 5.',
+          };
+        }
+      }
+      const updatedPodcast: Podcast = { ...podcast, ...payload };
+      await this.podcastRepository.save(updatedPodcast);
+      return { ok };
     } catch (e) {
-      return { ok: false, error: 'Couldn`t update account' };
+      console.log(e);
+      return this.InternalServerErrorOutput;
     }
   }
 
   async getEpisodes(podcastId: number): Promise<EpisodesOutput> {
-    const { podcast, ok, error } = await this.getPodcast(podcastId);
-    if (!ok) {
-      return { ok, error };
+    try {
+      const { podcast, ok, error } = await this.getPodcast(podcastId);
+      if (!ok) {
+        return { ok, error };
+      }
+      return {
+        ok: true,
+        episodes: podcast.episodes,
+      };
+    } catch (e) {
+      console.log(e);
+      return this.InternalServerErrorOutput;
     }
-    return { ok: true, episodes: podcast.episodes };
+  }
+
+  async getEpisode({
+    podcastId,
+    episodeId,
+  }: EpisodesSearchInput): Promise<GetEpisodeOutput> {
+    try {
+      const { episodes, ok, error } = await this.getEpisodes(podcastId);
+      if (!ok) {
+        return { ok, error };
+      }
+      const episode = episodes.find((episode) => episode.id === episodeId);
+      if (!episode) {
+        return {
+          ok: false,
+          error: `Episode with id ${episodeId} not found in podcast with id ${podcastId}`,
+        };
+      }
+      return {
+        ok: true,
+        episode,
+      };
+    } catch (e) {
+      console.log(e);
+      return this.InternalServerErrorOutput;
+    }
   }
 
   async createEpisode({
-    id: podcastId,
+    podcastId,
     title,
     category,
-  }: CreateEpisodeDto): Promise<CoreOutput> {
-    const { podcast, ok, error } = await this.getPodcast(podcastId);
-    if (!ok) {
-      return { ok, error };
+  }: CreateEpisodeInput): Promise<CreateEpisodeOutput> {
+    try {
+      const { podcast, ok, error } = await this.getPodcast(podcastId);
+      if (!ok) {
+        return { ok, error };
+      }
+      const newEpisode = this.episodeRepository.create({ title, category });
+      newEpisode.podcast = podcast;
+      const { id } = await this.episodeRepository.save(newEpisode);
+      return {
+        ok: true,
+        id,
+      };
+    } catch (e) {
+      console.log(e);
+      return this.InternalServerErrorOutput;
     }
-    await this.episodes.save(
-      this.episodes.create({ title, category, podcast }),
-    );
-    return { ok: true };
   }
 
-  async deleteEpisode({ episodeId }: EpisodesSearchInput): Promise<CoreOutput> {
-    await this.episodes.delete(episodeId);
-    return { ok: true };
+  async deleteEpisode({
+    podcastId,
+    episodeId,
+  }: EpisodesSearchInput): Promise<CoreOutput> {
+    try {
+      const { episode, error, ok } = await this.getEpisode({
+        podcastId,
+        episodeId,
+      });
+      if (!ok) {
+        return { ok, error };
+      }
+      await this.episodeRepository.delete({ id: episode.id });
+      return { ok: true };
+    } catch (e) {
+      console.log(e);
+      return this.InternalServerErrorOutput;
+    }
   }
 
   async updateEpisode({
+    podcastId,
     episodeId,
     ...rest
-  }: UpdateEpisodeDto): Promise<CoreOutput> {
-    await this.episodes.update(episodeId, { ...rest });
-    return { ok: true };
+  }: UpdateEpisodeInput): Promise<CoreOutput> {
+    try {
+      const { episode, ok, error } = await this.getEpisode({
+        podcastId,
+        episodeId,
+      });
+      if (!ok) {
+        return { ok, error };
+      }
+      const updatedEpisode = { ...episode, ...rest };
+      await this.episodeRepository.save(updatedEpisode);
+      return { ok: true };
+    } catch (e) {
+      console.log(e);
+      return this.InternalServerErrorOutput;
+    }
   }
 }

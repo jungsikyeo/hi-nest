@@ -1,20 +1,25 @@
-import { InputType, ObjectType, Field } from '@nestjs/graphql';
-import { Entity, Column, ManyToOne } from 'typeorm';
+import { ObjectType, Field } from '@nestjs/graphql';
+import { IsString } from 'class-validator';
+import { Column, Entity, ManyToOne, RelationId } from 'typeorm';
 import { Podcast } from './podcast.entity';
 import { CoreEntity } from '../../common/entities/core.entity';
 
-@InputType('EpisodeInput', { isAbstract: true })
-@ObjectType()
 @Entity()
+@ObjectType()
 export class Episode extends CoreEntity {
   @Column()
-  @Field((_) => String)
+  @Field((type) => String)
+  @IsString()
   title: string;
 
   @Column()
-  @Field((_) => String)
+  @Field((type) => String)
+  @IsString()
   category: string;
 
-  @ManyToOne((type) => Podcast, (podcast) => podcast.episodes)
+  @ManyToOne(() => Podcast, (podcast) => podcast.episodes, {
+    onDelete: 'CASCADE',
+  })
+  @Field((type) => Podcast)
   podcast: Podcast;
 }

@@ -1,63 +1,61 @@
 import { Resolver, Query, Mutation, Args } from '@nestjs/graphql';
 import { PodcastsService } from './podcasts.service';
 import { Podcast } from './entities/podcast.entity';
-import { CreatePodcastDto } from './dtos/create-podcast.dto';
-import { CoreOutput, PodcastOutput, EpisodesOutput } from './dtos/output.dto';
-import { PodcastSearchInput, EpisodesSearchInput } from './dtos/podcast.dto';
-import { UpdatePodcastDto } from './dtos/update-podcast.dto';
+import {
+  CreatePodcastInput,
+  CreatePodcastOutput,
+} from './dtos/create-podcast.dto';
+import { CoreOutput } from '../common/dtos/output.dto';
+import {
+  PodcastSearchInput,
+  PodcastOutput,
+  EpisodesOutput,
+  EpisodesSearchInput,
+  GetAllPodcastsOutput,
+} from './dtos/podcast.dto';
+import { UpdatePodcastInput } from './dtos/update-podcast.dto';
 import { Episode } from './entities/episode.entity';
-import { CreateEpisodeDto } from './dtos/create-episode.dto';
-import { UpdateEpisodeDto } from './dtos/update-episode.dto';
+import {
+  CreateEpisodeInput,
+  CreateEpisodeOutput,
+} from './dtos/create-episode.dto';
+import { UpdateEpisodeInput } from './dtos/update-episode.dto';
 
-@Resolver((Of) => Podcast)
+@Resolver((of) => Podcast)
 export class PodcastsResolver {
   constructor(private readonly podcastsService: PodcastsService) {}
 
-  @Query((returns) => [Podcast])
-  async getAllPodcasts(): Promise<Podcast[]> {
-    return await this.podcastsService.getAllPodcasts();
+  @Query((returns) => GetAllPodcastsOutput)
+  getAllPodcasts(): Promise<GetAllPodcastsOutput> {
+    return this.podcastsService.getAllPodcasts();
   }
 
-  @Mutation((returns) => CoreOutput)
-  async createPodcast(
-    @Args('input') createPodcastDto: CreatePodcastDto,
-  ): Promise<CoreOutput> {
-    const { ok, error } = await this.podcastsService.createPodcast(
-      createPodcastDto,
-    );
-    return {
-      ok,
-      error,
-    };
+  @Mutation((returns) => CreatePodcastOutput)
+  createPodcast(
+    @Args('input') createPodcastInput: CreatePodcastInput,
+  ): Promise<CreatePodcastOutput> {
+    return this.podcastsService.createPodcast(createPodcastInput);
   }
 
   @Query((returns) => PodcastOutput)
-  async getPodcast(@Args('input') podcastSearchInput: PodcastSearchInput) {
-    return await this.podcastsService.getPodcast(podcastSearchInput.id);
+  getPodcast(
+    @Args('input') podcastSearchInput: PodcastSearchInput,
+  ): Promise<PodcastOutput> {
+    return this.podcastsService.getPodcast(podcastSearchInput.id);
   }
 
   @Mutation((returns) => CoreOutput)
-  async deletePodcast(@Args('input') podcastSearchInput: PodcastSearchInput) {
-    const { ok, error } = await this.podcastsService.deletePodcast(
-      podcastSearchInput.id,
-    );
-    return {
-      ok,
-      error,
-    };
-  }
-
-  @Mutation((returns) => CoreOutput)
-  async updatePodcast(
-    @Args('input') updatePodcastDto: UpdatePodcastDto,
+  deletePodcast(
+    @Args('input') podcastSearchInput: PodcastSearchInput,
   ): Promise<CoreOutput> {
-    const { ok, error } = await this.podcastsService.updatePodcast(
-      updatePodcastDto,
-    );
-    return {
-      ok,
-      error,
-    };
+    return this.podcastsService.deletePodcast(podcastSearchInput.id);
+  }
+
+  @Mutation((returns) => CoreOutput)
+  updatePodcast(
+    @Args('input') updatePodcastInput: UpdatePodcastInput,
+  ): Promise<CoreOutput> {
+    return this.podcastsService.updatePodcast(updatePodcastInput);
   }
 }
 
@@ -66,26 +64,28 @@ export class EpisodeResolver {
   constructor(private readonly podcastService: PodcastsService) {}
 
   @Query((returns) => EpisodesOutput)
-  async getEpisodes(
+  getEpisodes(
     @Args('input') podcastSearchInput: PodcastSearchInput,
   ): Promise<EpisodesOutput> {
-    return await this.podcastService.getEpisodes(podcastSearchInput.id);
+    return this.podcastService.getEpisodes(podcastSearchInput.id);
+  }
+
+  @Mutation((returns) => CreateEpisodeOutput)
+  createEpisode(
+    @Args('input') createEpisodeInput: CreateEpisodeInput,
+  ): Promise<CreateEpisodeOutput> {
+    return this.podcastService.createEpisode(createEpisodeInput);
   }
 
   @Mutation((returns) => CoreOutput)
-  async createEpisode(
-    @Args('input') createEpisodeDto: CreateEpisodeDto,
+  updateEpisode(
+    @Args('input') updateEpisodeInput: UpdateEpisodeInput,
   ): Promise<CoreOutput> {
-    return this.podcastService.createEpisode(createEpisodeDto);
+    return this.podcastService.updateEpisode(updateEpisodeInput);
   }
 
   @Mutation((returns) => CoreOutput)
-  updateEpisode(@Args('input') updateEpisodeDto: UpdateEpisodeDto) {
-    return this.podcastService.updateEpisode(updateEpisodeDto);
-  }
-
-  @Mutation((returns) => CoreOutput)
-  async deleteEpisode(
+  deleteEpisode(
     @Args('input') episodesSearchInput: EpisodesSearchInput,
   ): Promise<CoreOutput> {
     return this.podcastService.deleteEpisode(episodesSearchInput);
