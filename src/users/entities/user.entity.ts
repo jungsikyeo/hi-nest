@@ -1,23 +1,23 @@
-import { Entity, Column, BeforeInsert, BeforeUpdate } from 'typeorm';
-import { CoreEntity } from '../../common/entities/core.entity';
 import {
+  ObjectType,
   Field,
   InputType,
-  ObjectType,
   registerEnumType,
 } from '@nestjs/graphql';
+import { IsString, IsEmail } from 'class-validator';
+import { Column, Entity, BeforeInsert, BeforeUpdate } from 'typeorm';
+import { CoreEntity } from './core.entity';
 import * as bcrypt from 'bcrypt';
 import { InternalServerErrorException } from '@nestjs/common';
-import { IsEmail, IsEnum } from 'class-validator';
 
-enum UserRole {
-  Host,
-  Listener,
+export enum UserRole {
+  Host = 'Host',
+  Listener = 'Listener',
 }
 
 registerEnumType(UserRole, { name: 'UserRole' });
 
-@InputType({ isAbstract: true })
+@InputType('UserInputType', { isAbstract: true })
 @ObjectType()
 @Entity()
 export class User extends CoreEntity {
@@ -26,36 +26,35 @@ export class User extends CoreEntity {
   @IsEmail()
   email: string;
 
-  @Column({ select: false })
+  @Column()
   @Field((type) => String)
+  @IsString()
   password: string;
 
-  @Column({
-    type: 'enum',
-    enum: UserRole,
-  })
+  @Column({ type: 'simple-enum', enum: UserRole })
   @Field((type) => UserRole)
-  @IsEnum(UserRole)
   role: UserRole;
 
   @BeforeInsert()
   @BeforeUpdate()
   async hashPassword(): Promise<void> {
-    if (this.password) {
-      try {
-        this.password = await bcrypt.hash(this.password, 10);
-      } catch (e) {
-        console.log(e);
-        throw new InternalServerErrorException();
-      }
+    if (!this.password) {
+      return;
+    }
+    try {
+      this.password = await bcrypt.hash(this.password, 10);
+    } catch (error) {
+      console.log(error);
+      throw new InternalServerErrorException();
     }
   }
 
   async checkPassword(aPassword: string): Promise<boolean> {
     try {
-      return await bcrypt.compare(aPassword, this.password);
-    } catch (e) {
-      console.log(e);
+      const ok = await bcrypt.compare(aPassword, this.password);
+      return ok;
+    } catch (error) {
+      console.log(error);
       throw new InternalServerErrorException();
     }
   }
