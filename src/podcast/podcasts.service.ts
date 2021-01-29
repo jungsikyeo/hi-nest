@@ -20,7 +20,16 @@ import {
   GetEpisodeOutput,
 } from './dtos/podcast.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Raw } from 'typeorm';
+import {
+  SearchPodcastInput,
+  SearchPodcastOutput,
+} from './dtos/search-podcast.dto';
+import {
+  CreateReviewInput,
+  CreateReviewOutput,
+} from './dtos/create-review.dto';
+import { Review } from './entities/review.entity';
 
 @Injectable()
 export class PodcastsService {
@@ -29,6 +38,8 @@ export class PodcastsService {
     private readonly podcastRepository: Repository<Podcast>,
     @InjectRepository(Episode)
     private readonly episodeRepository: Repository<Episode>,
+    @InjectRepository(Review)
+    private readonly reviewRepository: Repository<Review>,
   ) {}
 
   private readonly InternalServerErrorOutput = {
@@ -126,6 +137,32 @@ export class PodcastsService {
     }
   }
 
+  async searchPodcasts({
+    titleSearch,
+    page,
+  }: SearchPodcastInput): Promise<SearchPodcastOutput> {
+    try {
+      const [
+        podcasts,
+        totalResults,
+      ] = await this.podcastRepository.findAndCount({
+        where: {
+          title: Raw((title) => `${title} ILIKE '%${titleSearch}%'`),
+        },
+        take: 25,
+        skip: (page - 1) * 25,
+      });
+      return {
+        ok: true,
+        podcasts,
+        totalPages: Math.ceil(totalResults / 25),
+        totalResults,
+      };
+    } catch (e) {
+      return this.InternalServerErrorOutput;
+    }
+  }
+
   async getEpisodes(podcastId: number): Promise<EpisodesOutput> {
     const { podcast, ok, error } = await this.getPodcast(podcastId);
     if (!ok) {
@@ -215,6 +252,28 @@ export class PodcastsService {
       const updatedEpisode = { ...episode, ...rest };
       await this.episodeRepository.save(updatedEpisode);
       return { ok: true };
+    } catch (e) {
+      return this.InternalServerErrorOutput;
+    }
+  }
+
+  async createReview(
+    createdUser,
+    { podcastId, title, reviewText }: CreateReviewInput,
+  ): Promise<CreateReviewOutput> {
+    try {
+      const { podcast, ok, error } = await this.getPodcast(podcastId);
+      if (!ok) {
+        return { ok, error };
+      }
+      const newReview = this.reviewRepository.create({ title, reviewText });
+      newReview.podcast = podcast;
+      newReview.createdUser = createdUser;
+      const { id } = await this.reviewRepository.save(newReview);
+      return {
+        ok: true,
+        id,
+      };
     } catch (e) {
       return this.InternalServerErrorOutput;
     }

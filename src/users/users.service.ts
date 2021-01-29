@@ -10,14 +10,33 @@ import { Repository } from 'typeorm';
 import { JwtService } from '../jwt/jwt.service';
 import { UserProfileOutput } from './dtos/user-profile.dto';
 import { EditProfileInput, EditProfileOutput } from './dtos/edit-profile.dto';
+import {
+  ChangeSubscribeInput,
+  ChangeSubscribeOutput,
+} from './dtos/subscribe.dto';
+import { Podcast } from '../podcast/entities/podcast.entity';
+import {
+  MarkEpisodeAsPlayedInput,
+  MarkEpisodeAsPlayedOutput,
+} from './dtos/mark-episode-played.dto';
+import { Episode } from '../podcast/entities/episode.entity';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User)
-    private readonly users: Repository<User>,
+    private readonly userRepository: Repository<User>,
+    @InjectRepository(Podcast)
+    private readonly podcastRepository: Repository<Podcast>,
+    @InjectRepository(Episode)
+    private readonly episodeRepository: Repository<Episode>,
     private readonly jwtService: JwtService,
   ) {}
+
+  private readonly InternalServerErrorOutput = {
+    ok: false,
+    error: 'Internal server error occurred.',
+  };
 
   async createAccount({
     email,
@@ -25,16 +44,16 @@ export class UsersService {
     role,
   }: CreateAccountInput): Promise<CreateAccountOutput> {
     try {
-      const exists = await this.users.findOne({ email });
+      const exists = await this.userRepository.findOne({ email });
       if (exists) {
         return { ok: false, error: `There is a user with that email already` };
       }
-      const user = this.users.create({
+      const user = this.userRepository.create({
         email,
         password,
         role,
       });
-      await this.users.save(user);
+      await this.userRepository.save(user);
 
       return {
         ok: true,
@@ -49,7 +68,7 @@ export class UsersService {
   }
   async login({ email, password }: LoginInput): Promise<LoginOutput> {
     try {
-      const user = await this.users.findOne(
+      const user = await this.userRepository.findOne(
         { email },
         { select: ['id', 'password'] },
       );
@@ -80,7 +99,7 @@ export class UsersService {
 
   async findById(id: number): Promise<UserProfileOutput> {
     try {
-      const user = await this.users.findOneOrFail({ id });
+      const user = await this.userRepository.findOneOrFail({ id });
       return {
         ok: true,
         user,
@@ -98,12 +117,12 @@ export class UsersService {
     { email, password }: EditProfileInput,
   ): Promise<EditProfileOutput> {
     try {
-      const user = await this.users.findOneOrFail(userId);
+      const user = await this.userRepository.findOneOrFail(userId);
 
       if (email) user.email = email;
       if (password) user.password = password;
 
-      await this.users.save(user);
+      await this.userRepository.save(user);
       return {
         ok: true,
       };
@@ -112,6 +131,46 @@ export class UsersService {
         ok: false,
         error: 'Could not update profile',
       };
+    }
+  }
+
+  async changeSubscribe(
+    user: User,
+    { podcastId }: ChangeSubscribeInput,
+  ): Promise<ChangeSubscribeOutput> {
+    try {
+      const podcast = await this.podcastRepository.findOne({ id: podcastId });
+      if (!podcast) {
+        return { ok: false, error: 'Podcast not found' };
+      }
+      if (user.subsriptions.some((sub) => sub.id === podcast.id)) {
+        user.subsriptions = user.subsriptions.filter(
+          (sub) => sub.id !== podcast.id,
+        );
+      } else {
+        user.subsriptions = [...user.subsriptions, podcast];
+      }
+      await this.userRepository.save(user);
+      return { ok: true };
+    } catch {
+      return this.InternalServerErrorOutput;
+    }
+  }
+
+  async markEpisodeAsPlayed(
+    user: User,
+    { id: episodeId }: MarkEpisodeAsPlayedInput,
+  ): Promise<MarkEpisodeAsPlayedOutput> {
+    try {
+      const episode = await this.episodeRepository.findOne({ id: episodeId });
+      if (!episode) {
+        return { ok: false, error: 'Episode not found' };
+      }
+      user.playedEpisodes = [...user.playedEpisodes, episode];
+      await this.userRepository.save(user);
+      return { ok: true };
+    } catch {
+      return this.InternalServerErrorOutput;
     }
   }
 }

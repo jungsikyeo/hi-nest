@@ -12,6 +12,7 @@ import { JwtModule } from './jwt/jwt.module';
 import { AuthModule } from './auth/auth.module';
 import { User } from './users/entities/user.entity';
 import { JwtMiddleware } from './jwt/jwt.middleware';
+import { Review } from './podcast/entities/review.entity';
 
 @Module({
   imports: [
@@ -26,7 +27,7 @@ import { JwtMiddleware } from './jwt/jwt.middleware';
       database: 'postgres',
       synchronize: true,
       logging: true,
-      entities: [Podcast, Episode, User],
+      entities: [Podcast, Episode, User, Review],
     }),
     GraphQLModule.forRoot({
       autoSchemaFile: true,

@@ -12,6 +12,15 @@ import { AuthGuard } from '../auth/auth.guard';
 import { UserProfileInput, UserProfileOutput } from './dtos/user-profile.dto';
 import { EditProfileInput, EditProfileOutput } from './dtos/edit-profile.dto';
 import { Role } from 'src/auth/role.decorator';
+import {
+  ChangeSubscribeInput,
+  ChangeSubscribeOutput,
+} from './dtos/subscribe.dto';
+import { Podcast } from '../podcast/entities/podcast.entity';
+import {
+  MarkEpisodeAsPlayedInput,
+  MarkEpisodeAsPlayedOutput,
+} from './dtos/mark-episode-played.dto';
 
 @Resolver((of) => User)
 export class UsersResolver {
@@ -50,5 +59,32 @@ export class UsersResolver {
     @Args('input') editProfileInput: EditProfileInput,
   ): Promise<EditProfileOutput> {
     return this.usersService.editProfile(authUser.id, editProfileInput);
+  }
+
+  @Role(['Listener'])
+  @Mutation(() => ChangeSubscribeOutput)
+  changeSubscribe(
+    @AuthUser() user: User,
+    @Args('input') changeSubscribeInput: ChangeSubscribeInput,
+  ): Promise<ChangeSubscribeOutput> {
+    return this.usersService.changeSubscribe(user, changeSubscribeInput);
+  }
+
+  @Role(['Listener'])
+  @Query(() => [Podcast])
+  subscriptions(@AuthUser() user: User): Podcast[] {
+    return user.subsriptions;
+  }
+
+  @Role(['Listener'])
+  @Mutation(() => MarkEpisodeAsPlayedOutput)
+  markEpisodeAsPlayed(
+    @AuthUser() user: User,
+    @Args('input') markEpisodeAsPlayedInput: MarkEpisodeAsPlayedInput,
+  ): Promise<MarkEpisodeAsPlayedOutput> {
+    return this.usersService.markEpisodeAsPlayed(
+      user,
+      markEpisodeAsPlayedInput,
+    );
   }
 }

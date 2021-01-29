@@ -21,6 +21,14 @@ import {
 } from './dtos/create-episode.dto';
 import { UpdateEpisodeInput } from './dtos/update-episode.dto';
 import { Role } from 'src/auth/role.decorator';
+import {
+  SearchPodcastInput,
+  SearchPodcastOutput,
+} from './dtos/search-podcast.dto';
+import { Review } from './entities/review.entity';
+import { AuthUser } from '../auth/auth-user.decorator';
+import { User } from '../users/entities/user.entity';
+import { CreateReviewInput, CreateReviewOutput } from './dtos/create-review.dto';
 
 @Resolver((of) => Podcast)
 export class PodcastsResolver {
@@ -40,6 +48,7 @@ export class PodcastsResolver {
   }
 
   @Query((returns) => PodcastOutput)
+  @Role(['Any'])
   getPodcast(
     @Args('input') podcastSearchInput: PodcastSearchInput,
   ): Promise<PodcastOutput> {
@@ -60,6 +69,14 @@ export class PodcastsResolver {
     @Args('input') updatePodcastInput: UpdatePodcastInput,
   ): Promise<CoreOutput> {
     return this.podcastsService.updatePodcast(updatePodcastInput);
+  }
+
+  @Query((returns) => SearchPodcastOutput)
+  @Role(['Listener'])
+  searchPodcasts(
+    @Args('input') searchPodcastInput: SearchPodcastInput,
+  ): Promise<SearchPodcastOutput> {
+    return this.podcastsService.searchPodcasts(searchPodcastInput);
   }
 }
 
@@ -96,5 +113,19 @@ export class EpisodeResolver {
     @Args('input') episodesSearchInput: EpisodesSearchInput,
   ): Promise<CoreOutput> {
     return this.podcastService.deleteEpisode(episodesSearchInput);
+  }
+}
+
+@Resolver((of) => Review)
+export class ReviewResolver {
+  constructor(private readonly podcastService: PodcastsService) {}
+
+  @Mutation((returns) => CreateReviewOutput)
+  @Role(['Listener'])
+  createReview(
+    @AuthUser() createdUser: User,
+    @Args('input') createReviewInput: CreateReviewInput,
+  ): Promise<CreateReviewOutput> {
+    return this.podcastService.createReview(createdUser, createReviewInput);
   }
 }

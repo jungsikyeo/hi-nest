@@ -9,6 +9,10 @@ import { Column, Entity, BeforeInsert, BeforeUpdate } from 'typeorm';
 import { CoreEntity } from './core.entity';
 import * as bcrypt from 'bcrypt';
 import { InternalServerErrorException } from '@nestjs/common';
+import { Review } from '../../podcast/entities/review.entity';
+import { OneToMany, ManyToMany, JoinTable } from 'typeorm';
+import { Podcast } from '../../podcast/entities/podcast.entity';
+import { Episode } from '../../podcast/entities/episode.entity';
 
 export enum UserRole {
   Host = 'Host',
@@ -31,9 +35,27 @@ export class User extends CoreEntity {
   @IsString()
   password: string;
 
-  @Column({ type: 'simple-enum', enum: UserRole })
+  @Column({ type: 'enum', enum: UserRole })
   @Field((type) => UserRole)
   role: UserRole;
+
+  @OneToMany(() => Podcast, (podcast) => podcast.createdUser, { eager: true })
+  @Field((type) => [Podcast])
+  podcasts: Podcast[];
+
+  @OneToMany(() => Review, (review) => review.createdUser, { eager: true })
+  @Field((type) => [Review])
+  reviews: Review[];
+
+  @ManyToMany(() => Episode, { eager: true })
+  @Field((type) => [Episode])
+  @JoinTable()
+  playedEpisodes: Episode[];
+
+  @ManyToMany(() => Podcast, { eager: true })
+  @Field(() => [Podcast])
+  @JoinTable()
+  subsriptions: Podcast[];
 
   @BeforeInsert()
   @BeforeUpdate()
