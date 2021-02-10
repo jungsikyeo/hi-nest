@@ -59,12 +59,17 @@ export class PodcastsService {
     }
   }
 
-  async createPodcast({
-    title,
-    category,
-  }: CreatePodcastInput): Promise<CreatePodcastOutput> {
+  async createPodcast(
+    user,
+    { title, category, description }: CreatePodcastInput,
+  ): Promise<CreatePodcastOutput> {
     try {
-      const newPodcast = this.podcastRepository.create({ title, category });
+      const newPodcast = this.podcastRepository.create({
+        title,
+        category,
+        description,
+      });
+      newPodcast.createdUser = user;
       const { id } = await this.podcastRepository.save(newPodcast);
       return {
         ok: true,
@@ -111,27 +116,20 @@ export class PodcastsService {
 
   async updatePodcast({
     id,
-    payload,
+    title,
+    description,
   }: UpdatePodcastInput): Promise<CoreOutput> {
     try {
       const { ok, error, podcast } = await this.getPodcast(id);
       if (!ok) {
         return { ok, error };
       }
+      podcast.title = title;
+      podcast.description = !description ? null : description;
 
-      if (
-        payload.rating !== null &&
-        (payload.rating < 1 || payload.rating > 5)
-      ) {
-        return {
-          ok: false,
-          error: 'Rating must be between 1 and 5.',
-        };
-      } else {
-        const updatedPodcast: Podcast = { ...podcast, ...payload };
-        await this.podcastRepository.save(updatedPodcast);
-        return { ok };
-      }
+      const updatedPodcast: Podcast = { ...podcast };
+      await this.podcastRepository.save(updatedPodcast);
+      return { ok };
     } catch (e) {
       return this.InternalServerErrorOutput;
     }

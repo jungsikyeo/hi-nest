@@ -28,7 +28,10 @@ import {
 import { Review } from './entities/review.entity';
 import { AuthUser } from '../auth/auth-user.decorator';
 import { User } from '../users/entities/user.entity';
-import { CreateReviewInput, CreateReviewOutput } from './dtos/create-review.dto';
+import {
+  CreateReviewInput,
+  CreateReviewOutput,
+} from './dtos/create-review.dto';
 
 @Resolver((of) => Podcast)
 export class PodcastsResolver {
@@ -42,13 +45,14 @@ export class PodcastsResolver {
   @Mutation((returns) => CreatePodcastOutput)
   @Role(['Host'])
   createPodcast(
+    @AuthUser() authUser: User,
     @Args('input') createPodcastInput: CreatePodcastInput,
   ): Promise<CreatePodcastOutput> {
-    return this.podcastsService.createPodcast(createPodcastInput);
+    return this.podcastsService.createPodcast(authUser, createPodcastInput);
   }
 
   @Query((returns) => PodcastOutput)
-  @Role(['Any'])
+  @Role(['Listener'])
   getPodcast(
     @Args('input') podcastSearchInput: PodcastSearchInput,
   ): Promise<PodcastOutput> {
