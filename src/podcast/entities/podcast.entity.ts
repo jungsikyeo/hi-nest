@@ -1,6 +1,6 @@
 import { Episode } from './episode.entity';
 import { ObjectType, Field } from '@nestjs/graphql';
-import { IsString, IsEmpty, IsOptional } from 'class-validator';
+import { IsString, IsOptional, Max } from 'class-validator';
 import { Column, Entity, OneToMany, ManyToOne } from 'typeorm';
 import { CoreEntity } from './core.entity';
 import { Review } from './review.entity';

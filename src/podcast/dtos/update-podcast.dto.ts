@@ -1,4 +1,4 @@
-import { Field, InputType, PartialType, PickType } from '@nestjs/graphql';
+import { InputType, PickType } from '@nestjs/graphql';
 import { Podcast } from '../entities/podcast.entity';
 
 @InputType()

@@ -32,6 +32,7 @@ import {
   CreateReviewInput,
   CreateReviewOutput,
 } from './dtos/create-review.dto';
+import { MyPodcastOutput } from './dtos/my-podcast.dto';
 
 @Resolver((of) => Podcast)
 export class PodcastsResolver {
@@ -81,6 +82,12 @@ export class PodcastsResolver {
     @Args('input') searchPodcastInput: SearchPodcastInput,
   ): Promise<SearchPodcastOutput> {
     return this.podcastsService.searchPodcasts(searchPodcastInput);
+  }
+
+  @Query((returns) => MyPodcastOutput)
+  @Role(['Host', 'Listener'])
+  myPodcasts(@AuthUser() createdUser: User): Promise<MyPodcastOutput> {
+    return this.podcastsService.myPodcasts(createdUser);
   }
 }
 
