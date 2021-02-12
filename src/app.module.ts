@@ -20,9 +20,9 @@ import { ConfigModule } from '@nestjs/config';
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: process.env.NODE_ENV === 'dev' ? '.env.dev' : '.env.test',
-      ignoreEnvFile: process.env.NODE_ENV === 'prod',
+      ignoreEnvFile: process.env.NODE_ENV === 'production',
       validationSchema: Joi.object({
-        NODE_ENV: Joi.string().valid('dev', 'prod').required(),
+        NODE_ENV: Joi.string().valid('dev', 'production').required(),
         DB_HOST: Joi.string(),
         DB_PORT: Joi.string(),
         DB_USERNAME: Joi.string(),
@@ -42,12 +42,12 @@ import { ConfigModule } from '@nestjs/config';
             password: process.env.DB_PASSWORD,
             database: process.env.DB_NAME,
           }),
-      //synchronize: process.env.NODE_ENV !== 'prod',
-      //logging: process.env.NODE_ENV !== 'prod',
+      //synchronize: process.env.NODE_ENV !== 'production',
+      //logging: process.env.NODE_ENV !== 'production',
       entities: [Podcast, Episode, User, Review],
     }),
     GraphQLModule.forRoot({
-      //playground: process.env.NODE_ENV !== 'prod',
+      //playground: process.env.NODE_ENV !== 'production',
       autoSchemaFile: true,
       context: ({ req }) => ({ user: req['user'] }),
     }),
