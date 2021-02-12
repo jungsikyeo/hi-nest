@@ -1,4 +1,5 @@
 import { MiddlewareConsumer, Module, RequestMethod } from '@nestjs/common';
+import * as Joi from 'joi';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { GraphQLModule } from '@nestjs/graphql';
@@ -13,7 +14,6 @@ import { User } from './users/entities/user.entity';
 import { JwtMiddleware } from './jwt/jwt.middleware';
 import { Review } from './podcast/entities/review.entity';
 import { ConfigModule } from '@nestjs/config';
-import * as Joi from 'joi';
 
 @Module({
   imports: [
