@@ -13,7 +13,7 @@ import { User } from './users/entities/user.entity';
 import { JwtMiddleware } from './jwt/jwt.middleware';
 import { Review } from './podcast/entities/review.entity';
 import { ConfigModule } from '@nestjs/config';
-import Joi from 'joi';
+import * as Joi from 'joi';
 
 @Module({
   imports: [
