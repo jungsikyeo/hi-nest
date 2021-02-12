@@ -4,6 +4,6 @@ import { Podcast } from '../entities/podcast.entity';
 @InputType()
 export class UpdatePodcastInput extends PickType(
   Podcast,
-  ['id', 'title', 'description'],
+  ['id', 'title', 'category', 'description'],
   InputType,
 ) {}

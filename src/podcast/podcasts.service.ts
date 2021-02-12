@@ -86,7 +86,7 @@ export class PodcastsService {
     try {
       const podcast = await this.podcastRepository.findOne(
         { id },
-        { relations: ['episodes'] },
+        { relations: ['episodes', 'createdUser'] },
       );
       if (!podcast) {
         return {
@@ -119,6 +119,7 @@ export class PodcastsService {
   async updatePodcast({
     id,
     title,
+    category,
     description,
   }: UpdatePodcastInput): Promise<CoreOutput> {
     try {
@@ -127,6 +128,7 @@ export class PodcastsService {
         return { ok, error };
       }
       podcast.title = title;
+      podcast.category = category;
       podcast.description = !description ? null : description;
 
       const updatedPodcast: Podcast = { ...podcast };

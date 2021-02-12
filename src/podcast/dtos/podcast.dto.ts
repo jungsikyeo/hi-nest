@@ -3,6 +3,7 @@ import { CoreOutput } from './output.dto';
 import { Podcast } from '../entities/podcast.entity';
 import { IsInt } from 'class-validator';
 import { Episode } from '../entities/episode.entity';
+import { ManyToOne } from 'typeorm';
 
 @ObjectType()
 export class GetAllPodcastsOutput extends CoreOutput {

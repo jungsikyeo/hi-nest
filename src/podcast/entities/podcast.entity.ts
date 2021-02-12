@@ -31,9 +31,9 @@ export class Podcast extends CoreEntity {
   })
   createdUser: User;
 
-  @OneToMany(() => Episode, (episode) => episode.podcast)
-  @Field((type) => [Episode], { nullable: true })
-  episodes?: Episode[];
+  @OneToMany(() => Episode, (episode) => episode.podcast, { eager: true })
+  @Field((type) => [Episode])
+  episodes: Episode[];
 
   @OneToMany(() => Review, (review) => review.podcast)
   @Field((type) => [Review], { nullable: true })
