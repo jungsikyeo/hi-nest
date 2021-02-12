@@ -3,7 +3,6 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { GraphQLModule } from '@nestjs/graphql';
 import { PodcastsModule } from './podcast/podcasts.module';
-import { MoviesModule } from './movie/movies.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Podcast } from './podcast/entities/podcast.entity';
 import { Episode } from './podcast/entities/episode.entity';
@@ -13,29 +12,49 @@ import { AuthModule } from './auth/auth.module';
 import { User } from './users/entities/user.entity';
 import { JwtMiddleware } from './jwt/jwt.middleware';
 import { Review } from './podcast/entities/review.entity';
+import { ConfigModule } from '@nestjs/config';
+import Joi from 'joi';
 
 @Module({
   imports: [
-    MoviesModule,
-    PodcastsModule,
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: process.env.NODE_ENV === 'dev' ? '.env.dev' : '.env.test',
+      ignoreEnvFile: process.env.NODE_ENV === 'prod',
+      validationSchema: Joi.object({
+        NODE_ENV: Joi.string().valid('dev', 'prod').required(),
+        DB_HOST: Joi.string(),
+        DB_PORT: Joi.string(),
+        DB_USERNAME: Joi.string(),
+        DB_PASSWORD: Joi.string(),
+        DB_NAME: Joi.string(),
+        PRIVATE_KEY: Joi.string().required(),
+      }),
+    }),
     TypeOrmModule.forRoot({
       type: 'postgres',
-      host: 'yjsnas.synology.me',
-      port: 54321,
-      username: 'postgres',
-      password: 'y20431',
-      database: 'postgres',
-      synchronize: true,
-      logging: true,
+      ...(process.env.DATABASE_URL
+        ? { url: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } }
+        : {
+            host: process.env.DB_HOST,
+            port: +process.env.DB_PORT,
+            username: process.env.DB_USERNAME,
+            password: process.env.DB_PASSWORD,
+            database: process.env.DB_NAME,
+          }),
+      synchronize: process.env.NODE_ENV !== 'prod',
+      logging: process.env.NODE_ENV !== 'prod',
       entities: [Podcast, Episode, User, Review],
     }),
     GraphQLModule.forRoot({
+      //playground: process.env.NODE_ENV !== 'prod',
       autoSchemaFile: true,
       context: ({ req }) => ({ user: req['user'] }),
     }),
     JwtModule.forRoot({
-      privateKey: '8F879A253D71387E222C15F936BB6',
+      privateKey: process.env.PRIVATE_KEY,
     }),
+    PodcastsModule,
     UsersModule,
     AuthModule,
   ],
