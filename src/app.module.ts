@@ -47,7 +47,7 @@ import { ConfigModule } from '@nestjs/config';
       entities: [Podcast, Episode, User, Review],
     }),
     GraphQLModule.forRoot({
-      //playground: process.env.NODE_ENV !== 'prod',
+      //playground: process.env.NODE_ENV !== 'production',
       autoSchemaFile: true,
       context: ({ req }) => ({ user: req['user'] }),
     }),
