@@ -42,8 +42,8 @@ import { ConfigModule } from '@nestjs/config';
             password: process.env.DB_PASSWORD,
             database: process.env.DB_NAME,
           }),
-      synchronize: process.env.NODE_ENV !== 'prod',
-      logging: process.env.NODE_ENV !== 'prod',
+      //synchronize: process.env.NODE_ENV !== 'prod',
+      //logging: process.env.NODE_ENV !== 'prod',
       entities: [Podcast, Episode, User, Review],
     }),
     GraphQLModule.forRoot({
