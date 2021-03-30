@@ -3,7 +3,7 @@
 </p>
 
 # Hi NestJS : Nest Study용 repo
-## NestJS + Typescript + Apollo GraphQL + TypeORM + PostgreSQL
+ NestJS + Typescript + Apollo GraphQL + TypeORM + PostgreSQL
 
 ```
 {
